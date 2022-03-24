@@ -17,12 +17,12 @@ def determine_gpu(args) -> str:
             if key == 'CUDADeviceName':
                 return value.strip()
         return 'CPU'
-    except subprocess.CalledProcessError as err:
+    except (subprocess.CalledProcessError, FileNotFoundError) as err:
         try:
             # No condor - fallback to nvidia-smi parsing
             result = subprocess.run(['/usr/bin/nvidia-smi', '-L'], check=True, capture_output=True)
             return result.stdout.decode().split(":")[1].split('(')[0].strip()
-        except subprocess.CalledProcessError as err:
+        except (subprocess.CalledProcessError, FileNotFoundError) as err:
             return 'CPU'
 
 
