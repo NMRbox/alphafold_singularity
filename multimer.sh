@@ -16,4 +16,4 @@ python3 /opt/alphafold/run_alphafold.py \
   --uniclust30_database_path "$1"/uniclust30/uniclust30_2018_08/uniclust30_2018_08 \
   --pdb_seqres_database_path "$1"/pdb_seqres/pdb_seqres.txt \
   --uniprot_database_path "$1"/uniprot/uniprot.fasta \
-  --use_gpu_relax "$5"
+  "$5"

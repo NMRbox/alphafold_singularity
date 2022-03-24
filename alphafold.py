@@ -75,7 +75,7 @@ def run(arguments):
         print(f'Found FASTA file with {num_chains} sequences, treating as a multimer.')
         command.append('/opt/alphafold/multimer.sh')
     command.extend([arguments.database, arguments.FASTA_file, arguments.output, arguments.max_template_date,
-                    str(arguments.gpu_relax).lower()])
+                    "--use_gpu_relax" if arguments.gpu_relax else "--nouse_gpu_relax"])
 
     print(f'Running AlphaFold, this will take a long time.')
     if arguments.verbose:

@@ -14,4 +14,4 @@ python3 /opt/alphafold/run_alphafold.py \
   --bfd_database_path "$1"/bfd/bfd_metaclust_clu_complete_id30_c90_final_seq.sorted_opt \
   --uniclust30_database_path "$1"/uniclust30/uniclust30_2018_08/uniclust30_2018_08 \
   --pdb70_database_path "$1"/pdb70/pdb70 \
-  --use_gpu_relax "$5"
+  "$5"
