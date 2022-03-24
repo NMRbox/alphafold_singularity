@@ -70,7 +70,7 @@ def run(arguments):
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--database", "-d", action="store", default="/reboxitory/data/alphafold/1.0",
+parser.add_argument("--database", "-d", action="store", default="/reboxitory/data/alphafold/2.2.0",
                     help='The path to the AlphaFold database to use for the calculation.')
 parser.add_argument("--output-dir", "-o", action="store", default=".", dest='output',
                     help='The path where the output data should be stored. Defaults to the current directory.')
