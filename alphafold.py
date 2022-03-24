@@ -78,6 +78,8 @@ def run(arguments):
                     str(arguments.gpu_relax).lower()])
 
     print(f'Running AlphaFold, this will take a long time.')
+    if arguments.verbose:
+        print(f'Executing command: {" ".join(command)}')
     try:
         result = subprocess.run(command, check=True, capture_output=True)
     except subprocess.CalledProcessError as err:
