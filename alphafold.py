@@ -133,7 +133,7 @@ except (IOError, PermissionError):
 
 # Check that they have a GPU (or proceed with CPU if override turned on)
 gpu = determine_gpu(args)
-if not args.cpu and gpu == 'cpu':
+if not args.cpu and gpu == 'CPU':
     raise ValueError('AlphaFold requires a GPU - please re-run on a machine with a GPU.')
 if args.gpu_relax is None:
     args.gpu_relax = gpu in ['A100-PCIE-40GB', 'NVIDIA A100-PCIE-40GB']
