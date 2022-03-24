@@ -8,6 +8,24 @@ import sys
 from os.path import abspath
 
 
+def determine_gpu(args) -> str:
+    try:
+        result = subprocess.run(['/usr/lib/condor/libexec/condor_gpu_discovery -properties'],
+                                check=True, capture_output=True)
+        for line in result.stdout.decode():
+            key, value = line.split('=')
+            if key == 'CUDADeviceName':
+                return value.strip()
+        return 'CPU'
+    except subprocess.CalledProcessError as err:
+        try:
+            # No condor - fallback to nvidia-smi parsing
+            result = subprocess.run(['/usr/bin/nvidia-smi', '-L'], check=True, capture_output=True)
+            return result.stdout.decode().split(":")[1].split('(')[0].strip()
+        except subprocess.CalledProcessError as err:
+            return 'CPU'
+
+
 def read_fasta(file_path):
     with open(file_path, 'r') as fp:
         name, seq = None, []
@@ -56,21 +74,25 @@ def run(arguments):
     elif num_chains > 1:
         print(f'Found FASTA file with {num_chains} sequences, treating as a multimer.')
         command.append('/opt/alphafold/multimer.sh')
-    command.extend([arguments.database, arguments.FASTA_file, arguments.output, arguments.max_template_date])
+    command.extend([arguments.database, arguments.FASTA_file, arguments.output, arguments.max_template_date,
+                    arguments.gpu_relax])
 
     print(f'Running AlphaFold, this will take a long time.')
     try:
-        subprocess.run(command, check=True, capture_output=True)
+        result = subprocess.run(command, check=True, capture_output=True)
     except subprocess.CalledProcessError as err:
         print(f"AlphaFold raised an exception."
               f"{err.output.decode()}\n\nstderr:\n{err.stderr.decode()}")
         sys.exit(1)
 
+    if arguments.verbose:
+        print(f"AlphaFold run stdout:\n{result.stdout.decode()}")
+
     print(f"AlphaFold completed without exception. You can find your results in {abspath(arguments.output)}")
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--database", "-d", action="store", default="/reboxitory/data/alphafold/1.0",
+parser.add_argument("--database", "-d", action="store", default="/reboxitory/data/alphafold/2.2.0",
                     help='The path to the AlphaFold database to use for the calculation.')
 parser.add_argument("--output-dir", "-o", action="store", default=".", dest='output',
                     help='The path where the output data should be stored. Defaults to the current directory.')
@@ -82,6 +104,13 @@ parser.add_argument("--max-template-date", "-t", action="store", default=str(dat
 parser.add_argument("--singularity-container", action="store",
                     default=os.path.join(os.path.dirname(os.path.realpath(__file__)), 'alphafold.sif'),
                     help=argparse.SUPPRESS)
+# Allow force running on machines without GPU
+parser.add_argument('--cpu', dest='cpu', action='store_true', help=argparse.SUPPRESS)
+parser.add_argument('-v', '--verbose', dest='verbose', action='store_true', help="Be verbose.")
+# Allow testing with specific GPU relax setting
+parser.add_argument('--gpu-relax', dest='gpu_relax', action='store_true', help=argparse.SUPPRESS)
+parser.add_argument('--no-gpu-relax', dest='gpu_relax', action='store_false', help=argparse.SUPPRESS)
+parser.set_defaults(gpu_relax=None)
 parser.add_argument('FASTA_file', action="store",
                     help='The FASTA file to use for the calculation.')
 args = parser.parse_args()
@@ -101,5 +130,15 @@ try:
 except (IOError, PermissionError):
     raise IOError(f"Your specified output directory '{args.output}' is not writeable. Please choose a different output "
                   f"directory.")
+
+# Check that they have a GPU (or proceed with CPU if override turned on)
+gpu = determine_gpu(args)
+if not args.cpu and gpu == 'cpu':
+    raise ValueError('AlphaFold requires a GPU - please re-run on a machine with a GPU.')
+if args.gpu_relax is None:
+    args.gpu_relax = gpu in ['A100-PCIE-40GB', 'NVIDIA A100-PCIE-40GB']
+if args.verbose:
+    print(f"Detected GPU: {gpu}")
+    print(f"GPU relax setting: {args.gpu_relax}")
 
 run(args)
