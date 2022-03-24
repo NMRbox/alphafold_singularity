@@ -75,7 +75,7 @@ def run(arguments):
         print(f'Found FASTA file with {num_chains} sequences, treating as a multimer.')
         command.append('/opt/alphafold/multimer.sh')
     command.extend([arguments.database, arguments.FASTA_file, arguments.output, arguments.max_template_date,
-                    arguments.gpu_relax])
+                    str(arguments.gpu_relax).lower()])
 
     print(f'Running AlphaFold, this will take a long time.')
     try:
@@ -105,7 +105,7 @@ parser.add_argument("--singularity-container", action="store",
                     default=os.path.join(os.path.dirname(os.path.realpath(__file__)), 'alphafold.sif'),
                     help=argparse.SUPPRESS)
 # Allow force running on machines without GPU
-parser.add_argument('--cpu', dest='cpu', action='store_true', help=argparse.SUPPRESS)
+parser.add_argument('--cpu', dest='cpu', action='store_true', default=False, help=argparse.SUPPRESS)
 parser.add_argument('-v', '--verbose', dest='verbose', action='store_true', help="Be verbose.")
 # Allow testing with specific GPU relax setting
 parser.add_argument('--gpu-relax', dest='gpu_relax', action='store_true', help=argparse.SUPPRESS)
