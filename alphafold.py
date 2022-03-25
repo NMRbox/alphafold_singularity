@@ -88,7 +88,7 @@ def run(arguments):
         sys.exit(1)
 
     if arguments.verbose:
-        print(f"AlphaFold run stdout:\n{result.stdout.decode()}")
+        print(f"AlphaFold run stdout:\n{result.stdout.decode()}\n\nstderr:{result.stderr.decode()}")
 
     print(f"AlphaFold completed without exception. You can find your results in {abspath(arguments.output)}")
 
