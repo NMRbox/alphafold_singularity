@@ -1,29 +1,33 @@
 #!/usr/bin/env python3.8
 
 import argparse
+import csv
 import datetime
 import os
 import subprocess
 import sys
+from io import StringIO
 from os.path import abspath
 
 
-def determine_gpu(args) -> str:
+def get_gpu_information() -> dict:
     try:
-        result = subprocess.run(['/usr/lib/condor/libexec/condor_gpu_discovery -properties'],
-                                check=True, capture_output=True)
-        for line in result.stdout.decode():
-            key, value = line.split('=')
-            if key == 'CUDADeviceName':
-                return value.strip()
-        return 'CPU'
-    except (subprocess.CalledProcessError, FileNotFoundError) as err:
-        try:
-            # No condor - fallback to nvidia-smi parsing
-            result = subprocess.run(['/usr/bin/nvidia-smi', '-L'], check=True, capture_output=True)
-            return result.stdout.decode().split(":")[1].split('(')[0].strip()
-        except (subprocess.CalledProcessError, FileNotFoundError) as err:
-            return 'CPU'
+        # No condor - fallback to nvidia-smi parsing
+        result = subprocess.run(['/usr/bin/nvidia-smi', '--query-gpu=name,utilization.gpu,memory.free,memory.total',
+                                 '--format=csv,nounits,noheader'], check=True, capture_output=True)
+        csv_io = StringIO(result.stdout.decode())
+        with csv.reader(csv_io) as csv_reader:
+            data = csv_reader.next()
+            print(data)
+            return {'name': data[0],
+                    'utilization.gpu': int(data[1]),
+                    'memory.free': int(data[2]),
+                    'memory.total': int(data[3])}
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        return {'name': 'CPU',
+                'utilization.gpu': float('nan'),
+                'memory.free': float('nan'),
+                'memory.total': float('nan')}
 
 
 def read_fasta(file_path):
@@ -42,6 +46,37 @@ def read_fasta(file_path):
 
 
 def run(arguments):
+    # Ensure output directory is writeable
+    try:
+        test_path = os.path.join(args.output, '.KD5cpxqYzBNqaBZ66guDuh33ns7JYz2jrKq')
+        with open(test_path, 'w') as test:
+            pass
+        os.unlink(test_path)
+    except (IOError, PermissionError):
+        raise IOError(f"Your specified output directory '{args.output}' is not "
+                      f"writeable. Please choose a different output directory.")
+
+    # Check that they have a GPU (or proceed with CPU if override turned on)
+    gpu_info = get_gpu_information()
+    if not args.force and gpu_info['name'] == 'CPU':
+        print('AlphaFold requires a GPU and none was detected - please re-run on a machine with a GPU.')
+        sys.exit(2)
+
+    # Check that there is enough free GPU RAM to run
+    if not args.force and gpu_info['memory.free'] < 10000:
+        print('AlphaFold requires a large amount of GPU ram available, and this machine has less than 10GB free. '
+              'Most likely this means that another user is already using this GPU.')
+        sys.exit(3)
+
+    # Only use GPU relaxation on the A100
+    if args.gpu_relax is None:
+        args.gpu_relax = gpu_info['name'] in ['A100-PCIE-40GB', 'NVIDIA A100-PCIE-40GB']
+
+    # Print run configuration
+    if args.verbose:
+        print(f"Detected GPU: {gpu_info} ({gpu_info['memory.free']} free GPU RAM / {gpu_info['memory.total']})")
+        print(f"GPU relax setting: {args.gpu_relax}")
+
     sequences = list(read_fasta(arguments.FASTA_file))
     num_chains = len(sequences)
 
@@ -107,7 +142,9 @@ parser.add_argument("--singularity-container", action="store",
                     default=os.path.join(os.path.dirname(os.path.realpath(__file__)), 'alphafold.sif'),
                     help=argparse.SUPPRESS)
 # Allow force running on machines without GPU
-parser.add_argument('--cpu', dest='cpu', action='store_true', default=False, help=argparse.SUPPRESS)
+parser.add_argument('-f', '--force', dest='force', action='store_true', default=False,
+                    help='Try to run even if no GPU is detected, or the memory is deemed insufficient. Not '
+                         'recommended, as either failure or extremely long run times are expected.')
 parser.add_argument('-v', '--verbose', dest='verbose', action='store_true', help="Be verbose.")
 # Allow testing with specific GPU relax setting
 parser.add_argument('--gpu-relax', dest='gpu_relax', action='store_true', help=argparse.SUPPRESS)
@@ -122,26 +159,5 @@ args.database = abspath(args.database)
 args.output = abspath(args.output)
 args.FASTA_file = abspath(args.FASTA_file)
 args.singularity_container = abspath(args.singularity_container)
-
-# Ensure output directory is writeable
-try:
-    test_path = os.path.join(args.output, '.KD5cpxqYzBNqaBZ66guDuh33ns7JYz2jrKq')
-    with open(test_path, 'w') as test:
-        pass
-    os.unlink(test_path)
-except (IOError, PermissionError):
-    raise IOError(f"Your specified output directory '{args.output}' is not writeable. Please choose a different output "
-                  f"directory.")
-
-# Check that they have a GPU (or proceed with CPU if override turned on)
-gpu = determine_gpu(args)
-if not args.cpu and gpu == 'CPU':
-    print('AlphaFold requires a GPU - please re-run on a machine with a GPU.')
-    sys.exit(2)
-if args.gpu_relax is None:
-    args.gpu_relax = gpu in ['A100-PCIE-40GB', 'NVIDIA A100-PCIE-40GB']
-if args.verbose:
-    print(f"Detected GPU: {gpu}")
-    print(f"GPU relax setting: {args.gpu_relax}")
 
 run(args)
