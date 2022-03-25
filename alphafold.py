@@ -73,7 +73,8 @@ def run(arguments):
 
     # Print run configuration
     if args.verbose:
-        print(f"Detected GPU: {gpu_info} ({gpu_info['memory.free']} free GPU RAM / {gpu_info['memory.total']})")
+        print(f"Detected GPU: {gpu_info['name']} ({gpu_info['memory.free']}MB free GPU RAM out of"
+              f" {gpu_info['memory.total']}MB total)")
         print(f"GPU relax setting: {args.gpu_relax}")
 
     sequences = list(read_fasta(arguments.FASTA_file))
