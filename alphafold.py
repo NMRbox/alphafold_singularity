@@ -64,7 +64,8 @@ def run(arguments):
     # Check that there is enough free GPU RAM to run
     if not args.force and gpu_info['memory.free'] < 10000:
         print('AlphaFold requires a large amount of GPU ram available, and this machine has less than 10GB free. '
-              'Most likely this means that another user is already using this GPU.')
+              'Most likely this means that another user is already using this GPU. Please try again on another '
+              'machine. Available machines: https://nmrbox.org/hardware#details')
         sys.exit(3)
 
     # Only use GPU relaxation on the A100
