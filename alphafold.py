@@ -16,13 +16,12 @@ def get_gpu_information() -> dict:
         result = subprocess.run(['/usr/bin/nvidia-smi', '--query-gpu=name,utilization.gpu,memory.free,memory.total',
                                  '--format=csv,nounits,noheader'], check=True, capture_output=True)
         csv_io = StringIO(result.stdout.decode())
-        with csv.reader(csv_io) as csv_reader:
-            data = csv_reader.next()
-            print(data)
-            return {'name': data[0],
-                    'utilization.gpu': int(data[1]),
-                    'memory.free': int(data[2]),
-                    'memory.total': int(data[3])}
+        csv_reader = csv.reader(csv_io)
+        data = next(csv_reader)
+        return {'name': data[0],
+                'utilization.gpu': int(data[1]),
+                'memory.free': int(data[2]),
+                'memory.total': int(data[3])}
     except (subprocess.CalledProcessError, FileNotFoundError):
         return {'name': 'CPU',
                 'utilization.gpu': float('nan'),
@@ -95,9 +94,11 @@ def run(arguments):
     if total_aa > 800:
         print('AlphaFold uses memory in accordance with the total number of amino acids in all chains. '
               f'As you have more than 800 amino acids in total ({total_aa}), you may run out of memory when running '
-              f'AlphaFold. You can look at the VM dashboard in your '
-              'user profile and select a machine with high amounts of memory to try again, but ultimately very long '
-              'sequences require more RAM than available on any NMRbox machine.')
+              f'AlphaFold. You can look at the VM dashboard in your user profile and select a machine with high '
+              f'amounts of memory to try again, but ultimately very long sequences require more RAM than available '
+              f'on any NMRbox machine. Furthermore, GPU memory may also be exhausted - if that happens, please try '
+              f'rerunning on a machine with an A100 GPU which has 40GB of GPU RAM rather than the 15GB available in '
+              f'the T4 machines. For machine details, please see: https://nmrbox.org/hardware#details')
 
     # Build the command
     command = ['singularity', 'exec', '--nv', '-B', arguments.database, '-B',
