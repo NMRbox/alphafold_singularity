@@ -8,25 +8,30 @@ import subprocess
 import sys
 from io import StringIO
 from os.path import abspath
+from typing import List
 
 
-def get_gpu_information() -> dict:
+def get_gpu_information() -> List[dict]:
     try:
         # No condor - fallback to nvidia-smi parsing
-        result = subprocess.run(['/usr/bin/nvidia-smi', '--query-gpu=name,utilization.gpu,memory.free,memory.total',
-                                 '--format=csv,nounits,noheader'], check=True, capture_output=True)
+        result = subprocess.run(['/usr/bin/nvidia-smi',
+                                 '--query-gpu=name,utilization.gpu,memory.free,memory.total,index',
+                                 '--format=csv,nounits,noheader'],
+                                check=True, capture_output=True)
         csv_io = StringIO(result.stdout.decode())
         csv_reader = csv.reader(csv_io)
         data = next(csv_reader)
-        return {'name': data[0],
-                'utilization.gpu': int(data[1]),
-                'memory.free': int(data[2]),
-                'memory.total': int(data[3])}
+        return [{'name': _[0],
+                 'utilization.gpu': int(_[1]),
+                 'memory.free': int(_[2]),
+                 'memory.total': int(_[3]),
+                 'index': int(_[4])} for _ in data]
     except (subprocess.CalledProcessError, FileNotFoundError):
-        return {'name': 'CPU',
-                'utilization.gpu': float('nan'),
-                'memory.free': float('nan'),
-                'memory.total': float('nan')}
+        return [{'name': 'CPU',
+                 'utilization.gpu': float('nan'),
+                 'memory.free': float('nan'),
+                 'memory.total': float('nan'),
+                 'index': None}]
 
 
 def read_fasta(file_path):
@@ -56,7 +61,11 @@ def run(arguments):
                       f"writeable. Please choose a different output directory.")
 
     # Check that they have a GPU (or proceed with CPU if override turned on)
-    gpu_info = get_gpu_information()
+    try:
+        gpu_in_use = os.environ['CUDA_VISIBLE_DEVICES']
+    except KeyError:
+        gpu_in_use = 0
+    gpu_info = get_gpu_information()[gpu_in_use]
     if not args.force and gpu_info['name'] == 'CPU':
         print('AlphaFold requires a GPU and none was detected - please re-run on a machine with a GPU.')
         sys.exit(2)
