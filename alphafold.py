@@ -25,7 +25,7 @@ def get_gpu_information() -> List[dict]:
                  'utilization.gpu': int(_[1]),
                  'memory.free': int(_[2]),
                  'memory.total': int(_[3]),
-                 'index': int(_[4])} for _ in data]
+                 'index': int(_[4])} for _ in csv_reader]
     except (subprocess.CalledProcessError, FileNotFoundError):
         return [{'name': 'CPU',
                  'utilization.gpu': float('nan'),
