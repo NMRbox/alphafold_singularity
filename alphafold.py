@@ -20,7 +20,6 @@ def get_gpu_information() -> List[dict]:
                                 check=True, capture_output=True)
         csv_io = StringIO(result.stdout.decode())
         csv_reader = csv.reader(csv_io)
-        data = next(csv_reader)
         return [{'name': _[0],
                  'utilization.gpu': int(_[1]),
                  'memory.free': int(_[2]),
@@ -62,7 +61,7 @@ def run(arguments):
 
     # Check that they have a GPU (or proceed with CPU if override turned on)
     try:
-        gpu_in_use = os.environ['CUDA_VISIBLE_DEVICES']
+        gpu_in_use = int(os.environ['CUDA_VISIBLE_DEVICES'])
     except KeyError:
         gpu_in_use = 0
     gpu_info = get_gpu_information()[gpu_in_use]
