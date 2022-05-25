@@ -162,6 +162,7 @@ parser.add_argument('-v', '--verbose', dest='verbose', action='store_true', help
 parser.add_argument('--gpu-relax', dest='gpu_relax', action='store_true', help=argparse.SUPPRESS)
 parser.add_argument('--no-gpu-relax', dest='gpu_relax', action='store_false', help=argparse.SUPPRESS)
 parser.set_defaults(gpu_relax=None)
+parser.add_argument('--version', action='version', version='%(prog)s 2.2.0')
 parser.add_argument('FASTA_file', action="store",
                     help='The FASTA file to use for the calculation.')
 args = parser.parse_args()
