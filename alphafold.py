@@ -2,35 +2,61 @@
 
 import argparse
 import csv
+import dataclasses
 import datetime
 import os
 import subprocess
 import sys
 from io import StringIO
 from os.path import abspath
-from typing import List
+from typing import Union
 
 
-def get_gpu_information() -> List[dict]:
+@dataclasses.dataclass
+class GPUInfo:
+    name: str = 'CPU'
+    utilization_gpu: Union[int, float] = float('nan')
+    memory_free: Union[int, float] = float('nan')
+    memory_total: Union[int, float] = float('nan')
+    index: Union[int, float] = None
+    uuid: str = 'Unknown'
+
+
+def get_gpu_information() -> GPUInfo:
     try:
         # No condor - fallback to nvidia-smi parsing
         result = subprocess.run(['/usr/bin/nvidia-smi',
-                                 '--query-gpu=name,utilization.gpu,memory.free,memory.total,index',
+                                 '--query-gpu=name,utilization.gpu,memory.free,memory.total,index,uuid',
                                  '--format=csv,nounits,noheader'],
                                 check=True, capture_output=True)
         csv_io = StringIO(result.stdout.decode())
         csv_reader = csv.reader(csv_io)
-        return [{'name': _[0],
-                 'utilization.gpu': int(_[1]),
-                 'memory.free': int(_[2]),
-                 'memory.total': int(_[3]),
-                 'index': int(_[4])} for _ in csv_reader]
+        available_gpus = [GPUInfo(name=_[0],
+                                  utilization_gpu=int(_[1]),
+                                  memory_free=int(_[2]),
+                                  memory_total=int(_[3]),
+                                  index=int(_[4]),
+                                  uuid=_[5]) for _ in csv_reader]
+        if len(available_gpus) == 0:
+            available_gpus.append(GPUInfo())
+
+        # Check that they have a GPU (or proceed with CPU if override turned on)
+        try:
+            gpu_in_use = os.environ['CUDA_VISIBLE_DEVICES']
+            try:
+                gpu_in_use = int(gpu_in_use)
+            except ValueError:
+                # Need to look up the GPU by UUID
+                for gpu in available_gpus:
+                    if gpu.uuid.startswith(gpu_in_use):
+                        return gpu
+                raise ValueError(f'The GPU specified by CUDA_VISIBLE_DEVICES ({gpu_in_use}) doesn\'t appear to exist '
+                                 f'in the output of nvidia-smi. This may be a system misconfiguration issue.')
+        except KeyError:
+            return available_gpus[0]
+
     except (subprocess.CalledProcessError, FileNotFoundError):
-        return [{'name': 'CPU',
-                 'utilization.gpu': float('nan'),
-                 'memory.free': float('nan'),
-                 'memory.total': float('nan'),
-                 'index': None}]
+        return GPUInfo()
 
 
 def read_fasta(file_path):
@@ -52,25 +78,20 @@ def run(arguments):
     # Ensure output directory is writeable
     try:
         test_path = os.path.join(args.output, '.KD5cpxqYzBNqaBZ66guDuh33ns7JYz2jrKq')
-        with open(test_path, 'w') as test:
+        with open(test_path, 'w'):
             pass
         os.unlink(test_path)
     except (IOError, PermissionError):
         raise IOError(f"Your specified output directory '{args.output}' is not "
                       f"writeable. Please choose a different output directory.")
 
-    # Check that they have a GPU (or proceed with CPU if override turned on)
-    try:
-        gpu_in_use = int(os.environ['CUDA_VISIBLE_DEVICES'])
-    except KeyError:
-        gpu_in_use = 0
-    gpu_info = get_gpu_information()[gpu_in_use]
-    if not args.force and gpu_info['name'] == 'CPU':
+    gpu_info = get_gpu_information()
+    if not args.force and gpu_info.name == 'CPU':
         print('AlphaFold requires a GPU and none was detected - please re-run on a machine with a GPU.')
         sys.exit(2)
 
     # Check that there is enough free GPU RAM to run
-    if not args.force and gpu_info['memory.free'] < 10000:
+    if not args.force and gpu_info.memory_free < 10000:
         print('AlphaFold requires a large amount of GPU ram available, and this machine has less than 10GB free. '
               'Most likely this means that another user is already using this GPU. Please try again on another '
               'machine. Available machines: https://nmrbox.org/hardware#details')
@@ -78,13 +99,13 @@ def run(arguments):
 
     # Only use GPU relaxation on the A100
     if args.gpu_relax is None:
-        args.gpu_relax = gpu_info['name'] in ['A100-PCIE-40GB', 'NVIDIA A100-PCIE-40GB',
-                                              'NVIDIA A100-SXM4-40GB', 'Tesla V100-PCIE-32GB']
+        args.gpu_relax = gpu_info.name in ['A100-PCIE-40GB', 'NVIDIA A100-PCIE-40GB',
+                                           'NVIDIA A100-SXM4-40GB', 'Tesla V100-PCIE-32GB']
 
     # Print run configuration
     if args.verbose:
-        print(f"Detected GPU: {gpu_info['name']} ({gpu_info['memory.free']}MB free GPU RAM out of"
-              f" {gpu_info['memory.total']}MB total)")
+        print(f"Detected GPU: {gpu_info.name} ({gpu_info.memory_free}MB free GPU RAM out of"
+              f" {gpu_info.memory_total}MB total)")
         print(f"GPU relax setting: {args.gpu_relax}")
 
     sequences = list(read_fasta(arguments.FASTA_file))
