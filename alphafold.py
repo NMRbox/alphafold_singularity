@@ -36,7 +36,7 @@ def get_gpu_information() -> GPUInfo:
                                   memory_free=int(_[2]),
                                   memory_total=int(_[3]),
                                   index=int(_[4]),
-                                  uuid=_[5]) for _ in csv_reader]
+                                  uuid=_[5].strip()) for _ in csv_reader]
         if len(available_gpus) == 0:
             available_gpus.append(GPUInfo())
 
