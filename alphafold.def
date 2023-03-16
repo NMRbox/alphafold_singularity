@@ -5,8 +5,7 @@ From: base.sif
 # https://github.com/kalininalab/alphafold_non_docker
 
 %files
-    monomer.sh /opt/monomer.sh
-    multimer.sh /opt/multimer.sh
+    launcher.sh /opt/launcher.sh
 
 %post
     # miniconda setup
@@ -31,4 +30,3 @@ From: base.sif
     pip3 install --upgrade jax==0.4.6 jaxlib==0.4.6+cuda11.cudnn82 -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
 
     cd /opt/miniconda3/envs/alphafold/lib/python3.8/site-packages/ && patch -p0 < $alphafold_path/docker/openmm.patch
-    mv  /opt/launcher.sh /opt/alphafold/launcher.sh
