@@ -86,24 +86,24 @@ def run(arguments):
                       f"writeable. Please choose a different output directory.")
 
     gpu_info = get_gpu_information()
-    if not args.force and gpu_info.name == 'CPU':
+    if not arguments.force and gpu_info.name == 'CPU':
         print('AlphaFold requires a GPU and none was detected - please re-run on a machine with a GPU.')
         sys.exit(2)
 
     # Check that there is enough free GPU RAM to run
-    if not args.force and gpu_info.memory_free < 10000:
+    if not arguments.force and gpu_info.memory_free < 10000:
         print('AlphaFold requires a large amount of GPU ram available, and this machine has less than 10GB free. '
               'Most likely this means that another user is already using this GPU. Please try again on another '
               'machine. Available machines: https://nmrbox.org/hardware#details')
         sys.exit(3)
 
     # Only use GPU relaxation on the A100
-    if args.gpu_relax is None:
-        args.gpu_relax = gpu_info.name in ['A100-PCIE-40GB', 'NVIDIA A100-PCIE-40GB',
-                                           'NVIDIA A100-SXM4-40GB', 'Tesla V100-PCIE-32GB']
+    if arguments.gpu_relax is None:
+        arguments.gpu_relax = gpu_info.name in ['A100-PCIE-40GB', 'NVIDIA A100-PCIE-40GB',
+                                                'NVIDIA A100-SXM4-40GB', 'Tesla V100-PCIE-32GB']
 
     # Print run configuration
-    if args.verbose:
+    if arguments.verbose:
         print(f"Detected GPU: {gpu_info.name} ({gpu_info.memory_free}MB free GPU RAM out of"
               f" {gpu_info.memory_total}MB total)")
         print(f"GPU relax setting: {args.gpu_relax}")
@@ -132,18 +132,46 @@ def run(arguments):
               f'rerunning on a machine with an A100 GPU which has 40GB of GPU RAM rather than the 15GB available in '
               f'the T4 machines. For machine details, please see: https://nmrbox.org/hardware#details')
 
-    # Build the command
+    # Build the basics of the command
     command = ['singularity', 'exec', '--nv', '-B', arguments.database, '-B',
-               arguments.output, '-B', arguments.FASTA_file, args.singularity_container]
+               arguments.output, '-B', arguments.FASTA_file]
+    # Determine the template directory path - and add it to the singularity mounts if necessary
+    if not arguments.template_mmcif_dir:
+        arguments.template_mmcif_dir = os.path.join(arguments.database, '/pdb_mmcif/mmcif_files')
+    else:
+        command.extend(['-B', arguments.template_mmcif_dir])
+    if arguments.custom_config_file:
+        command.extend(['--bind', f"{arguments.custom_config_file}:/opt/alphafold/alphafold/model/config.py"])
 
+    command.append(arguments.singularity_container)
+
+    # Now add in things common to monomers and multimers
+    command.extend([
+        '--data_dir', arguments.database,
+        '--fasta_paths', arguments.FASTA_file,
+        '--output_dir', arguments.output,
+        '--max_template_date', arguments.max_template_date,
+        '--template_mmcif_dir', arguments.template_mmcif_dir,
+        '--obsolete_pdbs_path', os.path.join(arguments.database, '/pdb_mmcif/obsolete.dat'),
+        '--mgnify_database_path', os.path.join(arguments.database, '/mgnify/mgy_clusters_2022_05.fa'),
+        '--uniref30_database_path', os.path.join(arguments.database, '/uniref30/'),
+        '--uniref90_database_path', os.path.join(arguments.database, '/uniref90/uniref90.fasta'),
+        '--bfd_database_path', os.path.join(arguments.database, '/bfd/bfd_metaclust_clu_complete_id30_c90_final_seq.sorted_opt'),
+        '--uniclust30_database_path', os.path.join(arguments.database, '/uniclust30/uniclust30_2018_08/uniclust30_2018_08'),
+        "--use_gpu_relax" if arguments.gpu_relax else "--nouse_gpu_relax",
+        "--use_precomputed_msas" if arguments.use_precomputed_msas else "--nouse_precomputed_msas"
+        ])
+
+    # Add monomer/multimer specific options
     if num_chains == 1:
         print('Found FASTA file with one sequence, treating as a monomer.')
-        command.append('/opt/alphafold/monomer.sh')
+        command.extend(['--pdb70_database_path', os.path.join(arguments.database, '/pdb70/pdb70')])
     elif num_chains > 1:
         print(f'Found FASTA file with {num_chains} sequences, treating as a multimer.')
-        command.append('/opt/alphafold/multimer.sh')
-    command.extend([arguments.database, arguments.FASTA_file, arguments.output, arguments.max_template_date,
-                    "--use_gpu_relax" if arguments.gpu_relax else "--nouse_gpu_relax"])
+        command.extend(['--pdb_seqres_database_path', os.path.join(arguments.database, '/pdb_seqres/pdb_seqres.txt'),
+                        '--uniprot_database_path',  os.path.join(arguments.database, '/uniprot/uniprot.fasta'),
+                        "--num_multimer_predictions_per_model", arguments.num_multimer_predictions_per_model,
+                        '--model_preset', 'multimer'])
 
     print(f'Running AlphaFold, this will take a long time.')
     if arguments.verbose:
@@ -162,30 +190,45 @@ def run(arguments):
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--database", "-d", action="store", default="/reboxitory/data/alphafold/2.2.0.2",
-                    help='The path to the AlphaFold database to use for the calculation.')
 parser.add_argument("--output-dir", "-o", action="store", default=".", dest='output',
                     help='The path where the output data should be stored. Defaults to the current directory.')
-parser.add_argument("--max-template-date", "-t", action="store", default=str(datetime.date.today()),
-                    dest='max_template_date',
-                    help='If you are predicting the structure of a protein that is already in PDB'
-                         ' and you wish to avoid using it as a template, then max-template-date must be set to'
-                         ' be before the release date of the structure.')
-parser.add_argument("--singularity-container", action="store",
-                    default=os.path.join(os.path.dirname(os.path.realpath(__file__)), 'alphafold.sif'),
-                    help=argparse.SUPPRESS)
-# Allow force running on machines without GPU
-parser.add_argument('-f', '--force', dest='force', action='store_true', default=False,
-                    help='Try to run even if no GPU is detected, or the memory is deemed insufficient. Not '
-                         'recommended, as either failure or extremely long run times are expected.')
 parser.add_argument('-v', '--verbose', dest='verbose', action='store_true', help="Be verbose.")
-# Allow testing with specific GPU relax setting
-parser.add_argument('--gpu-relax', dest='gpu_relax', action='store_true', help=argparse.SUPPRESS)
-parser.add_argument('--no-gpu-relax', dest='gpu_relax', action='store_false', help=argparse.SUPPRESS)
-parser.set_defaults(gpu_relax=None)
 parser.add_argument('--version', action='version', version='%(prog)s 2.2.0')
-parser.add_argument('FASTA_file', action="store",
-                    help='The FASTA file to use for the calculation.')
+parser.add_argument('FASTA_file', action="store", help='The FASTA file to use for the calculation.')
+
+advanced = parser.add_argument_group('advanced options')
+advanced.add_argument("--custom_config_file", action="store",
+                      help='Completely replace the standard AlphaFold run configuration file with your own configuration file.'
+                           'Provide a path to a configuration file to use rather than the standard one.')
+advanced.add_argument('--gpu-relax', dest='gpu_relax', action='store_true', help=argparse.SUPPRESS)
+advanced.add_argument('--no-gpu-relax', dest='gpu_relax', action='store_false', help=argparse.SUPPRESS)
+advanced.set_defaults(gpu_relax=None)
+advanced.add_argument("--database", "-d", action="store", default="/reboxitory/data/alphafold/2.3.1",
+                      help='The path to the AlphaFold database to use for the calculation.')
+advanced.add_argument("--singularity-container", action="store",
+                      default=os.path.join(os.path.dirname(os.path.realpath(__file__)), 'alphafold.sif'),
+                      help=argparse.SUPPRESS)
+advanced.add_argument('-f', '--force', dest='force', action='store_true', default=False,
+                      help='Try to run even if no GPU is detected, or the memory is deemed insufficient. Not '
+                           'recommended, as either failure or extremely long run times are expected.')
+
+alphafold_group = parser.add_argument_group('advanced AlphaFold pass-through options')
+alphafold_group.add_argument("--max_template_date", action="store", default=str(datetime.date.today()),
+                             help='If you are predicting the structure of a protein that is already in PDB'
+                                  ' and you wish to avoid using it as a template, then max-template-date must be set to'
+                                  ' be before the release date of the structure.')
+alphafold_group.add_argument("--template_mmcif_dir", action="store",
+                             help='Specify a template directory to use instead of the standard mmcif template directory.')
+alphafold_group.add_argument("--use_precomputed_msas", action="store_true", default=False,
+                             help='Whether to read MSAs that have been written to disk instead of running the MSA '
+                                  'tools. The MSA files are looked up in the output directory, so it must stay the same between multiple '
+                                  'runs that are to reuse the MSAs. WARNING: This will not check if the sequence, database or configuration have '
+                                  'changed. You are recommended to specify an output directory if using this argument to avoid conflicts.')
+alphafold_group.add_argument("--num_multimer_predictions_per_model", action="store", default=5,
+                             help='How many predictions (each with a different random seed) will be generated per model. E.g. if this is 2 '
+                                  'and there are 5 models then there will be 10 predictions per input. '
+                                  'Note: this FLAG only applies if your input file is a multimer.')
+
 args = parser.parse_args()
 
 # Get absolute paths
@@ -193,5 +236,7 @@ args.database = abspath(args.database)
 args.output = abspath(args.output)
 args.FASTA_file = abspath(args.FASTA_file)
 args.singularity_container = abspath(args.singularity_container)
+if args.custom_config_file:
+    args.custom_config_file = abspath(args.custom_config_file)
 
 run(args)

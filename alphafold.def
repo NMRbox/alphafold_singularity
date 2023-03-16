@@ -17,7 +17,7 @@ From: base.sif
     conda update -n base conda
     conda activate alphafold
 
-    conda install -y -c conda-forge openmm==7.5.1 cudnn==8.2.1.32 cudatoolkit==11.0.3 pdbfixer==1.7
+    conda install -y -c conda-forge openmm==7.5.1 cudnn>=8.6 cudatoolkit==11.0.3 pdbfixer==1.7
     conda install -y -c bioconda hmmer==3.3.2 hhsuite==3.3.0 kalign2==2.04
 
     # alphafold setup
@@ -27,10 +27,13 @@ From: base.sif
 
     wget -q -P alphafold/alphafold/common/ https://git.scicore.unibas.ch/schwede/openstructure/-/raw/7102c63615b64735c4941278d92b554ec94415f8/modules/mol/alg/src/stereo_chemical_props.txt
 
-    pip install absl-py==1.0.0 biopython==1.79 chex==0.0.7 dm-haiku==0.0.9 dm-tree==0.1.6 immutabledict==2.0.0 jax==0.3.25 ml-collections==0.1.0 numpy==1.21.6 scipy==1.7.0 tensorflow-cpu==2.11.0
-    pip install --upgrade jax jaxlib==0.1.69+cuda111 -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
     pip install -r alphafold/requirements.txt
+    pip3 install --upgrade jax==0.4.6 jaxlib==0.4.6+cuda11.cudnn82 -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
 
     cd /opt/miniconda3/envs/alphafold/lib/python3.8/site-packages/ && patch -p0 < $alphafold_path/docker/openmm.patch
-    mv  /opt/monomer.sh /opt/alphafold/monomer.sh
-    mv  /opt/multimer.sh /opt/alphafold/multimer.sh
+    mv  /opt/launcher.sh /opt/alphafold/launcher.sh
+
+\
+
+ERROR: Could not find a version that satisfies the requirement jaxlib==cuda114 (from versions: 0.1.52+cuda100, 0.1.52+cuda101, 0.1.52+cuda102, 0.1.52+cuda110, 0.1.55+cuda100, 0.1.55+cuda101, 0.1.55+cuda102, 0.1.55+cuda110, 0.1.56+cuda100, 0.1.56+cuda101, 0.1.56+cuda102, 0.1.56+cuda110, 0.1.56+cuda111, 0.1.57+cuda101, 0.1.57+cuda102, 0.1.57+cuda110, 0.1.57+cuda111, 0.1.58+cuda101, 0.1.58+cuda102, 0.1.58+cuda110, 0.1.58+cuda111, 0.1.59+cuda101, 0.1.59+cuda102, 0.1.59+cuda110, 0.1.59+cuda111, 0.1.60, 0.1.60+cuda101, 0.1.60+cuda102, 0.1.60+cuda110, 0.1.60+cuda111, 0.1.61, 0.1.61+cuda101, 0.1.61+cuda102, 0.1.61+cuda110, 0.1.61+cuda111, 0.1.61+cuda112, 0.1.62, 0.1.62+cuda101, 0.1.62+cuda102, 0.1.62+cuda110, 0.1.62+cuda111, 0.1.62+cuda112, 0.1.63, 0.1.63+cuda101, 0.1.63+cuda102, 0.1.63+cuda110, 0.1.63+cuda111, 0.1.63+cuda112, 0.1.64, 0.1.64+cuda101, 0.1.64+cuda102, 0.1.64+cuda110, 0.1.64+cuda111, 0.1.64+cuda112, 0.1.65, 0.1.65+cuda101, 0.1.65+cuda102, 0.1.65+cuda110, 0.1.65+cuda111, 0.1.65+cuda112, 0.1.66, 0.1.66+cuda101, 0.1.66+cuda102, 0.1.66+cuda110, 0.1.66+cuda111, 0.1.67, 0.1.67+cuda101, 0.1.67+cuda102, 0.1.67+cuda110, 0.1.67+cuda111, 0.1.68, 0.1.68+cuda101, 0.1.68+cuda102, 0.1.68+cuda110, 0.1.68+cuda111, 0.1.69, 0.1.69+cuda101, 0.1.69+cuda102, 0.1.69+cuda110, 0.1.69+cuda111, 0.1.70, 0.1.70+cuda101, 0.1.70+cuda102, 0.1.70+cuda110, 0.1.70+cuda111, 0.1.71, 0.1.71+cuda102, 0.1.71+cuda110, 0.1.71+cuda111, 0.1.72, 0.1.72+cuda111, 0.1.73, 0.1.73+cuda11.cudnn805, 0.1.73+cuda11.cudnn82, 0.1.74, 0.1.74+cuda11.cudnn805, 0.1.74+cuda11.cudnn82, 0.1.75, 0.1.75+cuda11.cudnn805, 0.1.75+cuda11.cudnn82, 0.1.76, 0.1.76+cuda11.cudnn805, 0.1.76+cuda11.cudnn82, 0.3.0, 0.3.0+cuda11.cudnn805, 0.3.0+cuda11.cudnn82, 0.3.2, 0.3.2+cuda11.cudnn805, 0.3.2+cuda11.cudnn82, 0.3.5, 0.3.5+cuda11.cudnn805, 0.3.5+cuda11.cudnn82, 0.3.7, 0.3.7+cuda11.cudnn805, 0.3.7+cuda11.cudnn82, 0.3.8+cuda11.cudnn805, 0.3.8+cuda11.cudnn82, 0.3.10, 0.3.10+cuda11.cudnn805, 0.3.10+cuda11.cudnn82, 0.3.14, 0.3.14+cuda11.cudnn805, 0.3.14+cuda11.cudnn82, 0.3.15, 0.3.15+cuda11.cudnn805, 0.3.15+cuda11.cudnn82, 0.3.18+cuda11.cudnn805, 0.3.18+cuda11.cudnn82, 0.3.20, 0.3.20+cuda11.cudnn805, 0.3.20+cuda11.cudnn82, 0.3.22, 0.3.22+cuda11.cudnn805, 0.3.22+cuda11.cudnn82, 0.3.24, 0.3.24+cuda11.cudnn805, 0.3.24+cuda11.cudnn82, 0.3.25, 0.3.25+cuda11.cudnn805, 0.3.25+cuda11.cudnn82, 0.4.0, 0.4.1, 0.4.1+cuda11.cudnn82, 0.4.1+cuda11.cudnn86, 0.4.2, 0.4.2+cuda11.cudnn82, 0.4.2+cuda11.cudnn86, 0.4.3, 0.4.3+cuda11.cudnn82, 0.4.3+cuda11.cudnn86, 0.4.4, 0.4.4+cuda11.cudnn82, 0.4.4+cuda11.cudnn86, 0.4.6, 0.4.6+cuda11.cudnn82, 0.4.6+cuda11.cudnn86)
+ERROR: No matching distribution found for jaxlib==cuda114
