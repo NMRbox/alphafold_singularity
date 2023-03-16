@@ -143,7 +143,8 @@ def run(arguments):
     if arguments.custom_config_file:
         command.extend(['--bind', f"{arguments.custom_config_file}:/opt/alphafold/alphafold/model/config.py"])
 
-    command.append(arguments.singularity_container)
+    # Finish the singularity arguments. Beyond this line are the pass-through AlphaFold arguments.
+    command.extend([arguments.singularity_container, '/opt/alphafold/launcher.sh'])
 
     # Now add in things common to monomers and multimers
     command.extend([
@@ -172,8 +173,6 @@ def run(arguments):
                         '--uniprot_database_path',  os.path.join(arguments.database, '/uniprot/uniprot.fasta'),
                         "--num_multimer_predictions_per_model", arguments.num_multimer_predictions_per_model,
                         '--model_preset', 'multimer'])
-
-    command.append('/opt/alphafold/launcher.sh')
 
     print(f'Running AlphaFold, this will take a long time.')
     if arguments.verbose:
