@@ -173,6 +173,8 @@ def run(arguments):
                         "--num_multimer_predictions_per_model", arguments.num_multimer_predictions_per_model,
                         '--model_preset', 'multimer'])
 
+    command.append('/opt/alphafold/launcher.sh')
+
     print(f'Running AlphaFold, this will take a long time.')
     if arguments.verbose:
         print(f'Executing command: {" ".join(command)}')
