@@ -155,7 +155,7 @@ def run(arguments):
         '--template_mmcif_dir', arguments.template_mmcif_dir,
         '--obsolete_pdbs_path', os.path.join(arguments.database, 'pdb_mmcif/obsolete.dat'),
         '--mgnify_database_path', os.path.join(arguments.database, 'mgnify/mgy_clusters_2022_05.fa'),
-        '--uniref30_database_path', os.path.join(arguments.database, 'uniref30/'),
+        '--uniref30_database_path', os.path.join(arguments.database, 'uniref30/UniRef30_2021_03'),
         '--uniref90_database_path', os.path.join(arguments.database, 'uniref90/uniref90.fasta'),
         '--bfd_database_path', os.path.join(arguments.database, 'bfd/bfd_metaclust_clu_complete_id30_c90_final_seq.sorted_opt'),
         "--use_gpu_relax" if arguments.gpu_relax else "--nouse_gpu_relax",
