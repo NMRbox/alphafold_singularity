@@ -137,7 +137,7 @@ def run(arguments):
                arguments.output, '-B', arguments.FASTA_file]
     # Determine the template directory path - and add it to the singularity mounts if necessary
     if not arguments.template_mmcif_dir:
-        arguments.template_mmcif_dir = os.path.join(arguments.database, '/pdb_mmcif/mmcif_files')
+        arguments.template_mmcif_dir = os.path.join(arguments.database, 'pdb_mmcif/mmcif_files')
     else:
         command.extend(['-B', arguments.template_mmcif_dir])
     if arguments.custom_config_file:
@@ -153,11 +153,11 @@ def run(arguments):
         '--output_dir', arguments.output,
         '--max_template_date', arguments.max_template_date,
         '--template_mmcif_dir', arguments.template_mmcif_dir,
-        '--obsolete_pdbs_path', os.path.join(arguments.database, '/pdb_mmcif/obsolete.dat'),
-        '--mgnify_database_path', os.path.join(arguments.database, '/mgnify/mgy_clusters_2022_05.fa'),
-        '--uniref30_database_path', os.path.join(arguments.database, '/uniref30/'),
-        '--uniref90_database_path', os.path.join(arguments.database, '/uniref90/uniref90.fasta'),
-        '--bfd_database_path', os.path.join(arguments.database, '/bfd/bfd_metaclust_clu_complete_id30_c90_final_seq.sorted_opt'),
+        '--obsolete_pdbs_path', os.path.join(arguments.database, 'pdb_mmcif/obsolete.dat'),
+        '--mgnify_database_path', os.path.join(arguments.database, 'mgnify/mgy_clusters_2022_05.fa'),
+        '--uniref30_database_path', os.path.join(arguments.database, 'uniref30/'),
+        '--uniref90_database_path', os.path.join(arguments.database, 'uniref90/uniref90.fasta'),
+        '--bfd_database_path', os.path.join(arguments.database, 'bfd/bfd_metaclust_clu_complete_id30_c90_final_seq.sorted_opt'),
         "--use_gpu_relax" if arguments.gpu_relax else "--nouse_gpu_relax",
         "--use_precomputed_msas" if arguments.use_precomputed_msas else "--nouse_precomputed_msas"
         ])
@@ -165,11 +165,11 @@ def run(arguments):
     # Add monomer/multimer specific options
     if num_chains == 1:
         print('Found FASTA file with one sequence, treating as a monomer.')
-        command.extend(['--pdb70_database_path', os.path.join(arguments.database, '/pdb70/pdb70')])
+        command.extend(['--pdb70_database_path', os.path.join(arguments.database, 'pdb70/pdb70')])
     elif num_chains > 1:
         print(f'Found FASTA file with {num_chains} sequences, treating as a multimer.')
-        command.extend(['--pdb_seqres_database_path', os.path.join(arguments.database, '/pdb_seqres/pdb_seqres.txt'),
-                        '--uniprot_database_path',  os.path.join(arguments.database, '/uniprot/uniprot.fasta'),
+        command.extend(['--pdb_seqres_database_path', os.path.join(arguments.database, 'pdb_seqres/pdb_seqres.txt'),
+                        '--uniprot_database_path',  os.path.join(arguments.database, 'uniprot/uniprot.fasta'),
                         "--num_multimer_predictions_per_model", arguments.num_multimer_predictions_per_model,
                         '--model_preset', 'multimer'])
 
