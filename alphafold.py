@@ -144,7 +144,7 @@ def run(arguments):
         command.extend(['--bind', f"{arguments.custom_config_file}:/opt/alphafold/alphafold/model/config.py"])
 
     # Finish the singularity arguments. Beyond this line are the pass-through AlphaFold arguments.
-    command.extend([arguments.singularity_container, '/opt/alphafold/launcher.sh'])
+    command.extend([arguments.singularity_container, '/opt/launcher.sh'])
 
     # Now add in things common to monomers and multimers
     command.extend([
@@ -158,7 +158,6 @@ def run(arguments):
         '--uniref30_database_path', os.path.join(arguments.database, '/uniref30/'),
         '--uniref90_database_path', os.path.join(arguments.database, '/uniref90/uniref90.fasta'),
         '--bfd_database_path', os.path.join(arguments.database, '/bfd/bfd_metaclust_clu_complete_id30_c90_final_seq.sorted_opt'),
-        '--uniclust30_database_path', os.path.join(arguments.database, '/uniclust30/uniclust30_2018_08/uniclust30_2018_08'),
         "--use_gpu_relax" if arguments.gpu_relax else "--nouse_gpu_relax",
         "--use_precomputed_msas" if arguments.use_precomputed_msas else "--nouse_precomputed_msas"
         ])
