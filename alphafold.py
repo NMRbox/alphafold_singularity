@@ -177,6 +177,8 @@ def run(arguments):
     if arguments.verbose:
         print(f'Executing command: {" ".join(command)}')
     try:
+        os.environ['XLA_PYTHON_CLIENT_MEM_FRACTION'] = '4.0'
+        os.environ['TF_FORCE_UNIFIED_MEMORY'] = '1'
         result = subprocess.run(command, check=True, capture_output=True)
     except subprocess.CalledProcessError as err:
         print(f"AlphaFold raised an exception."
