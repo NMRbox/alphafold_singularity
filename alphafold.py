@@ -226,7 +226,7 @@ alphafold_group.add_argument("--use_precomputed_msas", action="store_true", defa
                                   'tools. The MSA files are looked up in the output directory, so it must stay the same between multiple '
                                   'runs that are to reuse the MSAs. WARNING: This will not check if the sequence, database or configuration have '
                                   'changed. You are recommended to specify an output directory if using this argument to avoid conflicts.')
-alphafold_group.add_argument("--num_multimer_predictions_per_model", action="store", default=5,
+alphafold_group.add_argument("--num_multimer_predictions_per_model", action="store", default="5",
                              help='How many predictions (each with a different random seed) will be generated per model. E.g. if this is 2 '
                                   'and there are 5 models then there will be 10 predictions per input. '
                                   'Note: this FLAG only applies if your input file is a multimer.')
