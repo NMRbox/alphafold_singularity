@@ -191,54 +191,55 @@ def run(arguments):
     print(f"AlphaFold completed without exception. You can find your results in {abspath(arguments.output)}")
 
 
-parser = argparse.ArgumentParser()
-parser.add_argument("--output-dir", "-o", action="store", default=".", dest='output',
-                    help='The path where the output data should be stored. Defaults to the current directory.')
-parser.add_argument('-v', '--verbose', dest='verbose', action='store_true', help="Be verbose.")
-parser.add_argument('--version', action='version', version='%(prog)s 2.2.0')
-parser.add_argument('FASTA_file', action="store", help='The FASTA file to use for the calculation.')
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--output-dir", "-o", action="store", default=".", dest='output',
+                        help='The path where the output data should be stored. Defaults to the current directory.')
+    parser.add_argument('-v', '--verbose', dest='verbose', action='store_true', help="Be verbose.")
+    parser.add_argument('--version', action='version', version='%(prog)s 2.2.0')
+    parser.add_argument('FASTA_file', action="store", help='The FASTA file to use for the calculation.')
 
-advanced = parser.add_argument_group('advanced options')
-advanced.add_argument("--custom_config_file", action="store",
-                      help='Completely replace the standard AlphaFold run configuration file with your own configuration file.'
-                           'Provide a path to a configuration file to use rather than the standard one.')
-advanced.add_argument('--gpu-relax', dest='gpu_relax', action='store_true', help=argparse.SUPPRESS)
-advanced.add_argument('--no-gpu-relax', dest='gpu_relax', action='store_false', help=argparse.SUPPRESS)
-advanced.set_defaults(gpu_relax=None)
-advanced.add_argument("--database", "-d", action="store", default="/reboxitory/data/alphafold/2.3.1",
-                      help='The path to the AlphaFold database to use for the calculation.')
-advanced.add_argument("--singularity-container", action="store",
-                      default=os.path.join(os.path.dirname(os.path.realpath(__file__)), 'alphafold.sif'),
-                      help=argparse.SUPPRESS)
-advanced.add_argument('-f', '--force', dest='force', action='store_true', default=False,
-                      help='Try to run even if no GPU is detected, or the memory is deemed insufficient. Not '
-                           'recommended, as either failure or extremely long run times are expected.')
+    advanced = parser.add_argument_group('advanced options')
+    advanced.add_argument("--custom_config_file", action="store",
+                          help='Completely replace the standard AlphaFold run configuration file with your own configuration file.'
+                               'Provide a path to a configuration file to use rather than the standard one.')
+    advanced.add_argument('--gpu-relax', dest='gpu_relax', action='store_true', help=argparse.SUPPRESS)
+    advanced.add_argument('--no-gpu-relax', dest='gpu_relax', action='store_false', help=argparse.SUPPRESS)
+    advanced.set_defaults(gpu_relax=None)
+    advanced.add_argument("--database", "-d", action="store", default="/reboxitory/data/alphafold/live",
+                          help='The path to the AlphaFold database to use for the calculation.')
+    advanced.add_argument("--singularity-container", action="store",
+                          default=os.path.join(os.path.dirname(os.path.realpath(__file__)), 'alphafold.sif'),
+                          help=argparse.SUPPRESS)
+    advanced.add_argument('-f', '--force', dest='force', action='store_true', default=False,
+                          help='Try to run even if no GPU is detected, or the memory is deemed insufficient. Not '
+                               'recommended, as either failure or extremely long run times are expected.')
 
-alphafold_group = parser.add_argument_group('advanced AlphaFold pass-through options')
-alphafold_group.add_argument("--max_template_date", action="store", default=str(datetime.date.today()),
-                             help='If you are predicting the structure of a protein that is already in PDB'
-                                  ' and you wish to avoid using it as a template, then max-template-date must be set to'
-                                  ' be before the release date of the structure.')
-alphafold_group.add_argument("--template_mmcif_dir", action="store",
-                             help='Specify a template directory to use instead of the standard mmcif template directory.')
-alphafold_group.add_argument("--use_precomputed_msas", action="store_true", default=False,
-                             help='Whether to read MSAs that have been written to disk instead of running the MSA '
-                                  'tools. The MSA files are looked up in the output directory, so it must stay the same between multiple '
-                                  'runs that are to reuse the MSAs. WARNING: This will not check if the sequence, database or configuration have '
-                                  'changed. You are recommended to specify an output directory if using this argument to avoid conflicts.')
-alphafold_group.add_argument("--num_multimer_predictions_per_model", action="store", default="5",
-                             help='How many predictions (each with a different random seed) will be generated per model. E.g. if this is 2 '
-                                  'and there are 5 models then there will be 10 predictions per input. '
-                                  'Note: this FLAG only applies if your input file is a multimer.')
+    alphafold_group = parser.add_argument_group('advanced AlphaFold pass-through options')
+    alphafold_group.add_argument("--max_template_date", action="store", default=str(datetime.date.today()),
+                                 help='If you are predicting the structure of a protein that is already in PDB'
+                                      ' and you wish to avoid using it as a template, then max-template-date must be set to'
+                                      ' be before the release date of the structure.')
+    alphafold_group.add_argument("--template_mmcif_dir", action="store",
+                                 help='Specify a template directory to use instead of the standard mmcif template directory.')
+    alphafold_group.add_argument("--use_precomputed_msas", action="store_true", default=False,
+                                 help='Whether to read MSAs that have been written to disk instead of running the MSA '
+                                      'tools. The MSA files are looked up in the output directory, so it must stay the same between multiple '
+                                      'runs that are to reuse the MSAs. WARNING: This will not check if the sequence, database or configuration have '
+                                      'changed. You are recommended to specify an output directory if using this argument to avoid conflicts.')
+    alphafold_group.add_argument("--num_multimer_predictions_per_model", action="store", default="5",
+                                 help='How many predictions (each with a different random seed) will be generated per model. E.g. if this is 2 '
+                                      'and there are 5 models then there will be 10 predictions per input. '
+                                      'Note: this FLAG only applies if your input file is a multimer.')
 
-args = parser.parse_args()
+    args = parser.parse_args()
 
-# Get absolute paths
-args.database = abspath(args.database)
-args.output = abspath(args.output)
-args.FASTA_file = abspath(args.FASTA_file)
-args.singularity_container = abspath(args.singularity_container)
-if args.custom_config_file:
-    args.custom_config_file = abspath(args.custom_config_file)
+    # Get absolute paths
+    args.database = abspath(args.database)
+    args.output = abspath(args.output)
+    args.FASTA_file = abspath(args.FASTA_file)
+    args.singularity_container = abspath(args.singularity_container)
+    if args.custom_config_file:
+        args.custom_config_file = abspath(args.custom_config_file)
 
-run(args)
+    run(args)
