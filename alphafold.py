@@ -31,12 +31,13 @@ def get_gpu_information() -> GPUInfo:
                                 check=True, capture_output=True)
         csv_io = StringIO(result.stdout.decode())
         csv_reader = csv.reader(csv_io)
+        csv_data = [_ for _ in csv_reader]
         available_gpus = [GPUInfo(name=_[0],
                                   utilization_gpu=int(_[1]),
                                   memory_free=int(_[2]),
                                   memory_total=int(_[3]),
                                   index=int(_[4]),
-                                  uuid=_[5].strip()) for _ in csv_reader]
+                                  uuid=_[5].strip()) for _ in csv_data]
         if len(available_gpus) == 0:
             available_gpus.append(GPUInfo())
 
