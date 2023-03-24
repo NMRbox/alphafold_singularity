@@ -32,7 +32,7 @@ def get_gpu_information() -> GPUInfo:
         csv_io = StringIO(result.stdout.decode())
         csv_reader = csv.reader(csv_io)
         csv_data = [_ for _ in csv_reader]
-        available_gpus = [GPUInfo(name=_[0],
+        available_gpus = [alphafold.GPUInfo(name=_[0],
                                   utilization_gpu=int(_[1]),
                                   memory_free=int(_[2]),
                                   memory_total=int(_[3]),
@@ -46,6 +46,7 @@ def get_gpu_information() -> GPUInfo:
             gpu_in_use = os.environ['CUDA_VISIBLE_DEVICES']
             try:
                 gpu_in_use = int(gpu_in_use)
+                return available_gpus[gpu_in_use]
             except ValueError:
                 # Need to look up the GPU by UUID
                 for gpu in available_gpus:
