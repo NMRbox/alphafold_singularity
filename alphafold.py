@@ -85,7 +85,7 @@ def run(arguments):
         os.unlink(test_path)
     except (IOError, PermissionError):
         raise IOError(f"Your specified output directory '{args.output}' is not "
-                      f"writeable. Please choose a different output directory.")
+                      f"writeable. Please choose a different output directory.") from None
 
     gpu_info = get_gpu_information()
     if not arguments.force and gpu_info.name == 'CPU':
