@@ -6,18 +6,37 @@ environment.
 
 Build instructions from [non-docker setting](https://github.com/kalininalab/alphafold_non_docker) by kalininalab were used.
 
+## Setup
+
+Clone repository into your home directory and `cd` into the cloned folder. 
+
 ## Build container
 ```
 # build base container
-sudo /usr/software/singularity/bin/singularity build base.sif base.def
+apptainer build base.sif base.def
 # build alphafold container
-sudo /usr/software/singularity/bin/singularity build alphafold.sif alphafold.def
+apptainer build alphafold.sif alphafold.def
 ```
 
-## Run AlphaFold
+## Run AlphaFold Job
+
+Customize or add the following options to a typical CHTC HTCondor submit file: 
+
 ```
-./alphafold.py /path/to/fasta/file
+universe = container
+container_image = alphafold.sif
+requirements = (HasGpulabData == true)
+
+transfer_executable = false
+# replace with multimer.sh if applicable
+executable = /opt/alphafold/monomer.sh
+arguments = /gpulab_data/alphafold FASTA_file 
+
+transfer_input_files = alphafold.sif, FASTA_file
+
+# request CPUs, GPUS, etc.
 ```
+
 
 ### Notes
 
