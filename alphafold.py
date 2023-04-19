@@ -189,7 +189,7 @@ def run(arguments):
     #           f"{err.output.decode()}\n\nstderr:\n{err.stderr.decode()}")
     #     sys.exit(1)
 
-    process = subprocess.Popen(command, stderr=subprocess.PIPE, text=True)
+    process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
     try:
         # Capture and print any remaining output
         stdout, stderr = process.communicate()
