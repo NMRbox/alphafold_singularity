@@ -5,6 +5,7 @@ import csv
 import dataclasses
 import datetime
 import os
+import select
 import subprocess
 import sys
 from io import StringIO
@@ -178,17 +179,41 @@ def run(arguments):
     print(f'Running AlphaFold, this will take a long time.')
     if arguments.verbose:
         print(f'Executing command: {" ".join(command)}')
+    os.environ['XLA_PYTHON_CLIENT_MEM_FRACTION'] = '4.0'
+    os.environ['TF_FORCE_UNIFIED_MEMORY'] = '1'
+
+    # try:
+    #     result = subprocess.run(command, check=True, capture_output=True)
+    # except subprocess.CalledProcessError as err:
+    #     print(f"AlphaFold raised an exception."
+    #           f"{err.output.decode()}\n\nstderr:\n{err.stderr.decode()}")
+    #     sys.exit(1)
+
+    process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
     try:
-        os.environ['XLA_PYTHON_CLIENT_MEM_FRACTION'] = '4.0'
-        os.environ['TF_FORCE_UNIFIED_MEMORY'] = '1'
-        result = subprocess.run(command, check=True, capture_output=True)
-    except subprocess.CalledProcessError as err:
-        print(f"AlphaFold raised an exception."
-              f"{err.output.decode()}\n\nstderr:\n{err.stderr.decode()}")
+        while True:
+            # Wait for up to 10 seconds for new output
+            rlist, _, _ = select.select([process.stdout], [], [], 10)
+            if rlist:
+                # Read and display any new output
+                print(rlist[0].readline(), end='', flush=True)
+            else:
+                # No new output after 10 seconds, check if the process has completed
+                if process.poll() is not None:
+                    break
+
+            # Capture and print any remaining output
+            stdout, stderr = process.communicate()
+
+    except KeyboardInterrupt:
+        process.terminate()
+        stdout, stderr = process.communicate()
+        # Print or write captured output here
+        print(f"AlphaFold raised an exception.\n\n{stderr}\n\nstderr:\n{stdout}")
         sys.exit(1)
 
     if arguments.verbose:
-        print(f"AlphaFold run stdout:\n{result.stdout.decode()}\n\nstderr:{result.stderr.decode()}")
+        print(f"AlphaFold run stdout:\n{stdout}\n\nstderr:{stderr}")
 
     print(f"AlphaFold completed without exception. You can find your results in {abspath(arguments.output)}")
 
