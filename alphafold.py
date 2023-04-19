@@ -189,27 +189,15 @@ def run(arguments):
     #           f"{err.output.decode()}\n\nstderr:\n{err.stderr.decode()}")
     #     sys.exit(1)
 
-    process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    process = subprocess.Popen(command, stderr=subprocess.PIPE, text=True)
     try:
-        while True:
-            # Wait for up to 10 seconds for new output
-            rlist, _, _ = select.select([process.stdout], [], [], 10)
-            if rlist:
-                # Read and display any new output
-                print(rlist[0].readline(), end='', flush=True)
-            else:
-                # No new output after 10 seconds, check if the process has completed
-                if process.poll() is not None:
-                    break
-
-            # Capture and print any remaining output
-            stdout, stderr = process.communicate()
-
+        # Capture and print any remaining output
+        stdout, stderr = process.communicate()
     except KeyboardInterrupt:
         process.terminate()
         stdout, stderr = process.communicate()
         # Print or write captured output here
-        print(f"AlphaFold raised an exception.\n\n{stderr}\n\nstderr:\n{stdout}")
+        print(f"AlphaFold raised an exception.\n\nstderr:\n{stdout}")
         sys.exit(1)
 
     if arguments.verbose:
