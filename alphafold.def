@@ -16,8 +16,9 @@ From: base.sif
     conda update -y -n base conda
     conda activate alphafold
 
-    conda install -y -c conda-forge openmm==7.5.1 pdbfixer==1.7 cudnn==8.4.1.50
-    conda install -y -c "nvidia/label/cuda-12.1.0" cuda-toolkit==12.1.0
+    conda install -y -c conda-forge openmm==7.7.0 pdbfixer==1.7
+    #cudnn==8.4.1.50
+    #conda install -y -c "nvidia/label/cuda-12.1.0" cuda-toolkit==12.1.0
     conda install -y -c bioconda hmmer==3.3.2 hhsuite==3.3.0 kalign2==2.04
 
     # alphafold setup
