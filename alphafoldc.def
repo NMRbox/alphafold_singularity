@@ -1,0 +1,22 @@
+Bootstrap: localimage
+From: conda.sif
+
+# Build instructions from
+# https://github.com/kalininalab/alphafold_non_docker
+
+%files
+    launcher.sh /opt/launcher.sh
+
+%post
+
+    # alphafold setup
+    cd /opt/
+    git clone https://github.com/deepmind/alphafold.git --branch v2.3.1
+    alphafold_path="/opt/alphafold"
+
+    wget -q -P alphafold/alphafold/common/ https://git.scicore.unibas.ch/schwede/openstructure/-/raw/7102c63615b64735c4941278d92b554ec94415f8/modules/mol/alg/src/stereo_chemical_props.txt
+
+    pip install -r alphafold/requirements.txt
+    pip3 install --upgrade jax==0.4.7 jaxlib==0.4.7+cuda12.cudnn88 -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
+
+    cd /opt/miniconda3/envs/alphafold/lib/python3.8/site-packages/ && patch -p0 < $alphafold_path/docker/openmm.patch
