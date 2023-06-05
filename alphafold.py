@@ -137,6 +137,10 @@ def run(arguments):
     # Build the basics of the command
     command = ['singularity', 'exec', '--nv', '-B', arguments.database, '-B',
                arguments.output, '-B', arguments.FASTA_file]
+
+    # Map the system cuda into the container
+    command.extend(['-B', f'{args.cuda_dir}:/usr/local/cuda'])
+
     # Determine the template directory path - and add it to the singularity mounts if necessary
     if not arguments.template_mmcif_dir:
         arguments.template_mmcif_dir = os.path.join(arguments.database, 'pdb_mmcif/mmcif_files')
@@ -210,6 +214,8 @@ if __name__ == "__main__":
     advanced.set_defaults(gpu_relax=None)
     advanced.add_argument("--database", "-d", action="store", default="/reboxitory/data/alphafold/live",
                           help='The path to the AlphaFold database to use for the calculation.')
+    advanced.add_argument("--cuda-dir", dest='cuda_dir', action="store", default="/usr/local/cuda-11.8",
+                          help='The path to the CUDA library to use.')
     advanced.add_argument("--singularity-container", action="store",
                           default=os.path.join(os.path.dirname(os.path.realpath(__file__)), 'alphafold.sif'),
                           help=argparse.SUPPRESS)
