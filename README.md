@@ -10,7 +10,9 @@ Build instructions from [non-docker setting](https://github.com/kalininalab/alph
 ```
 # build base container
 sudo /usr/software/singularity/bin/singularity build base.sif base.def
-# build alphafold container
+# build intermediate container
+sudo /usr/software/singularity/bin/singularity build conda_base_alphafold.sif conda_base_alphafold.def
+# build package-specific container
 sudo /usr/software/singularity/bin/singularity build alphafold.sif alphafold.def
 ```
 
