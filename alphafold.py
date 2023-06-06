@@ -215,7 +215,7 @@ if __name__ == "__main__":
     advanced.add_argument('--gpu-relax', dest='gpu_relax', action='store_true', help=argparse.SUPPRESS)
     advanced.add_argument('--no-gpu-relax', dest='gpu_relax', action='store_false', help=argparse.SUPPRESS)
     advanced.set_defaults(gpu_relax=None)
-    advanced.add_argument("--database", "-d", action="store", default="/reboxitory/data/alphafold/live",
+    advanced.add_argument("--database", "-d", action="store", default=os.path.dirname(os.path.realpath(__file__)),
                           help='The path to the AlphaFold database to use for the calculation.')
     advanced.add_argument("--cuda-dir", dest='cuda_dir', action="store", default="/usr/local/cuda-11.8",
                           help='The path to the CUDA library to use.')
