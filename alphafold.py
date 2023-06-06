@@ -139,6 +139,8 @@ def run(arguments):
                arguments.output, '-B', arguments.FASTA_file]
 
     # Map the system cuda into the container
+    if not os.path.isdir(args.cuda_dir):
+        raise IOError('The specified CUDA library directory does not exist.')
     command.extend(['-B', f'{args.cuda_dir}:/usr/local/cuda'])
 
     # Determine the template directory path - and add it to the singularity mounts if necessary
