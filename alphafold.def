@@ -6,6 +6,7 @@ From: conda_base_alphafold.sif
 
 %files
     launcher.sh /opt/launcher.sh
+    test_gpu.sh /opt/test_gpu.sh
 
 %post
     . /opt/miniconda3/etc/profile.d/conda.sh
