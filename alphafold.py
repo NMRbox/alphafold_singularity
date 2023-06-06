@@ -102,7 +102,8 @@ def run(arguments):
     # Only use GPU relaxation on the A100
     if arguments.gpu_relax is None:
         arguments.gpu_relax = gpu_info.name in ['A100-PCIE-40GB', 'NVIDIA A100-PCIE-40GB',
-                                                'NVIDIA A100-SXM4-40GB', 'Tesla V100-PCIE-32GB']
+                                                'NVIDIA A100-SXM4-40GB', 'Tesla V100-PCIE-32GB',
+                                                'NVIDIA H100 PCIe']
 
     # Print run configuration
     if arguments.verbose:
