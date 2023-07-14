@@ -101,7 +101,7 @@ def run(arguments):
 
     # Only use GPU relaxation on the A100
     if arguments.gpu_relax is None:
-        arguments.gpu_relax = gpu_info.name in ['A100-PCIE-40GB', 'NVIDIA A100-PCIE-40GB',
+        arguments.gpu_relax = gpu_info.name in ['A100-PCIE-40GB', 'NVIDIA A100-PCIE-40GB', 'NVIDIA A100-SXM4-80GB'
                                                 'NVIDIA A100-SXM4-40GB', 'Tesla V100-PCIE-32GB',
                                                 'NVIDIA H100 PCIe']
 
@@ -182,22 +182,14 @@ def run(arguments):
                         "--num_multimer_predictions_per_model", arguments.num_multimer_predictions_per_model,
                         '--model_preset', 'multimer'])
 
-    print(f'Running AlphaFold, this will take a long time.')
+    print(f'Running AlphaFold, this will take a long time. All output following this line is from AlphaFold:')
     if arguments.verbose:
         print(f'Executing command: {" ".join(command)}')
-    try:
-        os.environ['XLA_PYTHON_CLIENT_MEM_FRACTION'] = '4.0'
-        os.environ['TF_FORCE_UNIFIED_MEMORY'] = '1'
-        result = subprocess.run(command, check=True, capture_output=True)
-    except subprocess.CalledProcessError as err:
-        print(f"AlphaFold raised an exception."
-              f"{err.output.decode()}\n\nstderr:\n{err.stderr.decode()}")
-        sys.exit(1)
 
-    if arguments.verbose:
-        print(f"AlphaFold run stdout:\n{result.stdout.decode()}\n\nstderr:{result.stderr.decode()}")
-
-    print(f"AlphaFold completed without exception. You can find your results in {abspath(arguments.output)}")
+    os.environ['XLA_PYTHON_CLIENT_MEM_FRACTION'] = '4.0'
+    os.environ['TF_FORCE_UNIFIED_MEMORY'] = '1'
+    os.fsync()
+    os.execvp('singularity', command)
 
 
 if __name__ == "__main__":
