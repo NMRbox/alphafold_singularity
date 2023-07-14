@@ -188,7 +188,8 @@ def run(arguments):
 
     os.environ['XLA_PYTHON_CLIENT_MEM_FRACTION'] = '4.0'
     os.environ['TF_FORCE_UNIFIED_MEMORY'] = '1'
-    os.fsync()
+    sys.stdout.flush()
+    sys.stderr.flush()
     os.execvp('singularity', command)
 
 
