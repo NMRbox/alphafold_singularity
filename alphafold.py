@@ -203,7 +203,7 @@ if __name__ == "__main__":
     parser.add_argument('FASTA_file', action="store", help='The FASTA file to use for the calculation.')
 
     advanced = parser.add_argument_group('advanced options')
-    advanced.add_argument("--custom_config_file", action="store",
+    advanced.add_argument("--custom-config-file", action="store",
                           help='Completely replace the standard AlphaFold run configuration file with your own configuration file.'
                                'Provide a path to a configuration file to use rather than the standard one.')
     advanced.add_argument('--gpu-relax', dest='gpu_relax', action='store_true', help=argparse.SUPPRESS)
