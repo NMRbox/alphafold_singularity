@@ -167,8 +167,9 @@ def run(arguments):
         '--uniref30_database_path', os.path.join(arguments.database, 'uniref30/UniRef30_2021_03'),
         '--uniref90_database_path', os.path.join(arguments.database, 'uniref90/uniref90.fasta'),
         '--bfd_database_path', os.path.join(arguments.database, 'bfd/bfd_metaclust_clu_complete_id30_c90_final_seq.sorted_opt'),
+        "--models_to_relax", arguments.models_to_relax,
         "--use_gpu_relax" if arguments.gpu_relax else "--nouse_gpu_relax",
-        "--use_precomputed_msas" if arguments.use_precomputed_msas else "--nouse_precomputed_msas"
+        "--use_precomputed_msas" if arguments.use_precomputed_msas else "--nouse_precomputed_msas",
         ])
 
     # Add monomer/multimer specific options
@@ -220,6 +221,8 @@ if __name__ == "__main__":
                                'recommended, as either failure or extremely long run times are expected.')
 
     alphafold_group = parser.add_argument_group('advanced AlphaFold pass-through options')
+    alphafold_group.add_argument("--models_to_relax", action="store", default='best', choices=['best', 'all', 'none'],
+                                 help='After structures are generated, relax only the best, all of them, or none of them?')
     alphafold_group.add_argument("--max_template_date", action="store", default=str(datetime.date.today()),
                                  help='If you are predicting the structure of a protein that is already in PDB'
                                       ' and you wish to avoid using it as a template, then max-template-date must be set to'
