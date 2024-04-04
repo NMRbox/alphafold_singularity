@@ -8,7 +8,9 @@ From: base.sif
     . /opt/miniconda3/etc/profile.d/conda.sh
 
     # These lines are to ensure that python3.8 for arm is available
+    conda config --add channels bioconda
     conda config --add channels conda-forge
+    conda config --set channel_priority strict
     conda update --all
 
     conda create --name alphafold python==3.8
