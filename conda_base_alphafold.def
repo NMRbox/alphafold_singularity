@@ -13,14 +13,14 @@ From: base.sif
     conda config --set channel_priority strict
     conda update --all
 
-    conda create --name alphafold python==3.8
+    conda create --name alphafold python==3.10
     conda update -n base conda
 
     # alphafold setup
     cd /opt/
     git clone https://github.com/deepmind/alphafold.git #--branch v2.3.2
-    cd alphafold
-    git checkout 6a3af1adb3bbbc53562da100e3819b2fc882f915
+#    cd alphafold
+#    git checkout 6a3af1adb3bbbc53562da100e3819b2fc882f915
     alphafold_path="/opt/alphafold"
     cd /opt
     wget -q -P alphafold/alphafold/common/ https://git.scicore.unibas.ch/schwede/openstructure/-/raw/7102c63615b64735c4941278d92b554ec94415f8/modules/mol/alg/src/stereo_chemical_props.txt
