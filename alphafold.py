@@ -140,9 +140,10 @@ def run(arguments):
                arguments.output, '-B', arguments.FASTA_file]
 
     # Map the system cuda into the container
-    if not os.path.isdir(args.cuda_dir):
-        raise IOError('The specified CUDA library directory does not exist.')
-    command.extend(['-B', f'{args.cuda_dir}:/usr/local/cuda'])
+    if args.cuda_dir:
+        if not os.path.isdir(args.cuda_dir):
+            raise IOError('The specified CUDA library directory does not exist.')
+        command.extend(['-B', f'{args.cuda_dir}:/usr/local/cuda'])
 
     # Determine the template directory path - and add it to the singularity mounts if necessary
     if not arguments.template_mmcif_dir:
@@ -211,7 +212,7 @@ if __name__ == "__main__":
     advanced.set_defaults(gpu_relax=None)
     advanced.add_argument("--database", "-d", action="store", default=os.path.dirname(os.path.realpath(__file__)),
                           help='The path to the AlphaFold database to use for the calculation.')
-    advanced.add_argument("--cuda-dir", dest='cuda_dir', action="store", default="/usr/local/cuda-11.8",
+    advanced.add_argument("--cuda-dir", dest='cuda_dir', action="store", default=None,
                           help='The path to the CUDA library to use.')
     advanced.add_argument("--singularity-container", action="store",
                           default=os.path.join(os.path.dirname(os.path.realpath(__file__)), 'alphafold.sif'),
