@@ -13,11 +13,10 @@ From: conda_base_alphafold.sif
     . /opt/miniconda3/etc/profile.d/conda.sh
     conda activate alphafold
     conda install -y -c conda-forge openmm==7.7.0 pdbfixer==1.8.1 cudnn==8.9.7.29
-#cudnn==8.3.2.44 cudatoolkit==11.5.1
     conda install -y -c bioconda hmmer==3.4 hhsuite==3.3.0 kalign2==2.04
 
     cd /opt
-    pip install -r alphafold/requirements.txt
+    pip3 install --upgrade wheel pip setuptools
+    pip3 install -r alphafold/requirements.txt
+    pip3 install tensorflow==2.16.1 # https://www.tensorflow.org/install/pip#step-by-step_instructions
     pip3 install --upgrade jax==0.4.28 jaxlib==0.4.28+cuda12.cudnn89 -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
-    # https://www.tensorflow.org/install/pip#step-by-step_instructions
-    pip3 install https://storage.googleapis.com/tensorflow/versions/2.16.1/tensorflow-2.16.1-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
