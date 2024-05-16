@@ -20,4 +20,4 @@ From: conda_base_alphafold.sif
     pip install -r alphafold/requirements.txt
     pip3 install --upgrade jax==0.4.28 jaxlib==0.4.28+cuda12.cudnn89 -f https://storage.googleapis.com/jax-releases/jax_cuda_releases.html
     # https://www.tensorflow.org/install/pip#step-by-step_instructions
-    pip3 install https://storage.googleapis.com/tensorflow/versions/2.16.1/tensorflow-2.16.1-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.whl
+    pip3 install https://storage.googleapis.com/tensorflow/versions/2.16.1/tensorflow-2.16.1-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
