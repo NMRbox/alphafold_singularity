@@ -1,0 +1,11 @@
+# Copy this file to alphafold3.ini (next to alphafold3.py) or pass it with --config to override the production paths.
+# Any value left out falls back to the production default, which is relative to the directory containing alphafold3.py:
+#   singularity_container = <script dir>/alphafold3.sif
+#   database = <script dir>
+#   models = <script dir>/models
+# Command line options (--database, --models, --singularity-container) take precedence over this file.
+
+[alphafold3]
+singularity_container = /public/jwedell/alphafold3/alphafold3/alphafold3.sif
+database = /public/jwedell/alphafold3/alphafold3_db
+models = /public/jwedell/alphafold3/models
