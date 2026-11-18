@@ -1,2 +1,4 @@
 *.sif
-alphafold3/alphafold3.ini
+alphafold3.ini
+alphafold3_src/
+singularity/
