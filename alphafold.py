@@ -101,9 +101,8 @@ def run(arguments):
 
     # Only use GPU relaxation on the A100
     if arguments.gpu_relax is None:
-        arguments.gpu_relax = gpu_info.name in ['A100-PCIE-40GB', 'NVIDIA A100-PCIE-40GB', 'NVIDIA A100-SXM4-80GB'
-                                                'NVIDIA A100-SXM4-40GB', 'Tesla V100-PCIE-32GB',
-                                                'NVIDIA H100 PCIe']
+        arguments.gpu_relax = gpu_info.name in ['A100-PCIE-40GB', 'NVIDIA A100-PCIE-40GB', 'NVIDIA A100-SXM4-80GB',
+                                                'NVIDIA A100-SXM4-40GB', 'Tesla V100-PCIE-32GB', 'NVIDIA H100 PCIe']
 
     # Print run configuration
     if arguments.verbose:
@@ -200,7 +199,7 @@ if __name__ == "__main__":
     parser.add_argument("--output-dir", "-o", action="store", default=".", dest='output',
                         help='The path where the output data should be stored. Defaults to the current directory.')
     parser.add_argument('-v', '--verbose', dest='verbose', action='store_true', help="Be verbose.")
-    parser.add_argument('--version', action='version', version='%(prog)s 2.2.0')
+    parser.add_argument('--version', action='version', version='%(prog)s 2.3.2')
     parser.add_argument('FASTA_file', action="store", help='The FASTA file to use for the calculation.')
 
     advanced = parser.add_argument_group('advanced options')
