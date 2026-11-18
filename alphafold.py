@@ -4,12 +4,61 @@ import argparse
 import csv
 import dataclasses
 import datetime
+import getpass
+import logging
+import logging.handlers
 import os
+import re
 import subprocess
 import sys
 from io import StringIO
 from os.path import abspath
 from typing import Union
+
+
+logger = logging.getLogger('alphafold')
+
+
+def setup_logging(level:int) -> None:
+    logging.basicConfig(level=level)
+    try:
+        syslog = logging.handlers.SysLogHandler(address='/dev/log')
+        syslog.setLevel(logging.INFO)
+        syslog.setFormatter(logging.Formatter('alphafold[%(process)d]: %(message)s'))
+        logger.addHandler(syslog)
+    except OSError as e:
+        print(f'Warning: unable to open syslog: {e}', file=sys.stderr)
+
+
+def get_condor_job_id(job_ad_path: str) -> str:
+    """Return 'ClusterId.ProcId' read from the HTCondor job ad file, or 'unknown'."""
+    ids = {}
+    try:
+        with open(job_ad_path, 'r') as fp:
+            for line in fp:
+                match = re.match(r'\s*(ClusterId|ProcId)\s*=\s*(\d+)\s*$', line)
+                if match:
+                    ids[match.group(1)] = match.group(2)
+    except OSError as e:
+        logger.debug('Unable to read job ad %s: %s', job_ad_path, e)
+        return 'unknown'
+    logger.debug('Parsed job ad ids: %s', ids)
+    if 'ClusterId' not in ids:
+        return 'unknown'
+    return ids['ClusterId'] + '.' + ids.get('ProcId', '0')
+
+
+def verify_condor() -> None:
+    """Exit unless running under HTCondor; log the user and job id to syslog."""
+    job_ad = os.environ.get('_CONDOR_JOB_AD')
+    logger.debug('Checking HTCondor environment: _CONDOR_JOB_AD=%r', job_ad)
+    if not job_ad:
+        logger.debug('_CONDOR_JOB_AD is not set; not running under HTCondor')
+        print('alphafold must be run from HTCondor')
+        sys.exit(1)
+    logger.debug('_CONDOR_JOB_AD is set; running under HTCondor')
+    job_id = get_condor_job_id(job_ad)
+    logger.info('user=%s condor_job_id=%s', getpass.getuser(), job_id)
 
 
 @dataclasses.dataclass
@@ -24,7 +73,7 @@ class GPUInfo:
 
 def get_gpu_information() -> GPUInfo:
     try:
-        # No condor - fallback to nvidia-smi parsing
+        logger.debug('Querying GPUs with nvidia-smi')
         result = subprocess.run(['/usr/bin/nvidia-smi',
                                  '--query-gpu=name,utilization.gpu,memory.free,memory.total,index,uuid',
                                  '--format=csv,nounits,noheader'],
@@ -38,26 +87,34 @@ def get_gpu_information() -> GPUInfo:
                                   memory_total=int(_[3]),
                                   index=int(_[4]),
                                   uuid=_[5].strip()) for _ in csv_data]
+        logger.debug('nvidia-smi reported %d GPU(s): %s', len(available_gpus), available_gpus)
         if len(available_gpus) == 0:
+            logger.debug('No GPUs reported; using CPU placeholder')
             available_gpus.append(GPUInfo())
 
         # Check that they have a GPU (or proceed with CPU if override turned on)
         try:
             gpu_in_use = os.environ['CUDA_VISIBLE_DEVICES']
+            logger.debug('CUDA_VISIBLE_DEVICES=%r', gpu_in_use)
             try:
                 gpu_in_use = int(gpu_in_use)
+                logger.debug('Selecting GPU by index %d', gpu_in_use)
                 return available_gpus[gpu_in_use]
             except ValueError:
                 # Need to look up the GPU by UUID
+                logger.debug('CUDA_VISIBLE_DEVICES is not an index; matching by UUID prefix')
                 for gpu in available_gpus:
                     if gpu.uuid.startswith(gpu_in_use):
+                        logger.debug('Matched GPU %s', gpu)
                         return gpu
                 raise ValueError(f'The GPU specified by CUDA_VISIBLE_DEVICES ({gpu_in_use}) doesn\'t appear to exist '
                                  f'in the output of nvidia-smi. This may be a system misconfiguration issue.')
         except KeyError:
+            logger.debug('CUDA_VISIBLE_DEVICES not set; using first GPU')
             return available_gpus[0]
 
-    except (subprocess.CalledProcessError, FileNotFoundError):
+    except (subprocess.CalledProcessError, FileNotFoundError) as e:
+        logger.debug('nvidia-smi failed (%s); assuming no GPU', e)
         return GPUInfo()
 
 
@@ -88,12 +145,15 @@ def run(arguments):
                       f"writeable. Please choose a different output directory.") from None
 
     gpu_info = get_gpu_information()
+    logger.debug('GPU check: name=%s memory_free=%s force=%s', gpu_info.name, gpu_info.memory_free, arguments.force)
     if not arguments.force and gpu_info.name == 'CPU':
+        logger.debug('No GPU detected and --force not given; exiting')
         print('AlphaFold requires a GPU and none was detected - please re-run on a machine with a GPU.')
         sys.exit(2)
 
     # Check that there is enough free GPU RAM to run
     if not arguments.force and gpu_info.memory_free < 10000:
+        logger.debug('Only %sMB GPU memory free (< 10000MB) and --force not given; exiting', gpu_info.memory_free)
         print('AlphaFold requires a large amount of GPU ram available, and this machine has less than 10GB free. '
               'Most likely this means that another user is already using this GPU. Please try again on another '
               'machine. Available machines: https://nmrbox.org/hardware#details')
@@ -201,6 +261,7 @@ if __name__ == "__main__":
     parser.add_argument('-v', '--verbose', dest='verbose', action='store_true', help="Be verbose.")
     parser.add_argument('--version', action='version', version='%(prog)s 2.3.2')
     parser.add_argument('FASTA_file', action="store", help='The FASTA file to use for the calculation.')
+    parser.add_argument('-l', '--loglevel', default='WARN', help="Python logging level")
 
     advanced = parser.add_argument_group('advanced options')
     advanced.add_argument("--custom-config-file", action="store",
@@ -240,6 +301,10 @@ if __name__ == "__main__":
                                       'Note: this FLAG only applies if your input file is a multimer.')
 
     args = parser.parse_args()
+
+    setup_logging(args.loglevel)
+
+    verify_condor()
 
     # Get absolute paths
     args.database = abspath(args.database)
