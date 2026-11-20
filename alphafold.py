@@ -270,10 +270,11 @@ if __name__ == "__main__":
     advanced.add_argument('--gpu-relax', dest='gpu_relax', action='store_true', help=argparse.SUPPRESS)
     advanced.add_argument('--no-gpu-relax', dest='gpu_relax', action='store_false', help=argparse.SUPPRESS)
     advanced.set_defaults(gpu_relax=None)
-    advanced.add_argument("--database", "-d", action="store", default=os.path.dirname(os.path.realpath(__file__)),
-                          help='The path to the AlphaFold database to use for the calculation.')
-    advanced.add_argument("--cuda-dir", dest='cuda_dir', action="store", default=None,
-                          help='The path to the CUDA library to use.')
+    advanced.add_argument("-d", "--database", action="store", default=None,
+                          help='The path to the AlphaFold database to use for the calculation. '
+                               'Defaults to the parent directory of the Singularity container.')
+    advanced.add_argument("--cuda-dir", dest='cuda_dir', action="store", default='/usr/local/cuda',
+                          help='The path to the CUDA library to use. Defaults to /usr/local/cuda.')
     advanced.add_argument("--singularity-container", action="store",
                           default=os.path.join(os.path.dirname(os.path.realpath(__file__)), 'alphafold.sif'),
                           help=argparse.SUPPRESS)
@@ -307,11 +308,17 @@ if __name__ == "__main__":
     verify_condor()
 
     # Get absolute paths
+    args.singularity_container = abspath(args.singularity_container)
+    if args.database is None:
+        args.database = os.path.dirname(args.singularity_container)
+        logger.info('--database not set; using parent of singularity container: %s', args.database)
     args.database = abspath(args.database)
     args.output = abspath(args.output)
     args.FASTA_file = abspath(args.FASTA_file)
-    args.singularity_container = abspath(args.singularity_container)
     if args.custom_config_file:
         args.custom_config_file = abspath(args.custom_config_file)
+
+    logger.info('Selections: database=%s cuda_dir=%s singularity_container=%s output=%s',
+                args.database, args.cuda_dir, args.singularity_container, args.output)
 
     run(args)
